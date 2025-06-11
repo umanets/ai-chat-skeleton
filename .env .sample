@@ -1,0 +1,6 @@
+OPENAI_API_KEY=sk-proj-ma8...
+OPENAI_LLM_GPT_4O_MINI=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+QDRANT_URL=http://localhost:6335
+INFERENCE_URL=http://localhost:8001
+INFERENCE_PORT=8001
