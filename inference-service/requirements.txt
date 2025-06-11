@@ -6,3 +6,4 @@ uvicorn[standard]
 openai
 qdrant-client
 httpx
+orjson
