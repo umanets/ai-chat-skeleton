@@ -4,7 +4,7 @@ import type { Chat } from '../services/apiService';
 interface SidebarProps {
   chatList: Chat[];
   activeChatId: string | null;
-  onSelectChat: (chatId: string) => void;
+  onSelectChat: (chat: Chat) => void;
   onNewChat: () => Promise<void>;
 }
 
@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ chatList, activeChatId, onSelectChat,
         {chatList.map((chat) => (
           <button
             key={chat.id}
-            onClick={() => onSelectChat(chat.id)}
+            onClick={() => onSelectChat(chat)}
             className={`w-full text-left p-2 rounded ${
               activeChatId === chat.id
                 ? 'bg-gray-200 dark:bg-gray-700 font-semibold'
