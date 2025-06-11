@@ -87,7 +87,7 @@ class Memory:
 
     def _get_all(self):
         try:
-            return self.mem0.get_all()
+            return self.mem0.get_all(agent_id="inference-service")
         except Exception as e:
             msg = str(e)
             if 'Collection' in msg and "doesn't exist" in msg:
