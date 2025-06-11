@@ -1,0 +1,12 @@
+{
+  "name": "chat-runner",
+  "version": "1.0.0",
+  "description": "Start all services (backend, inference-service, frontend) together",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}

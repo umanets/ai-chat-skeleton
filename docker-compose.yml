@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant_chat
+    ports:
+      - "6335:6333"   # HTTP API
+      - "6334:6334"   # gRPC API (optional)
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    networks:
+      - mynet
+networks:
+  mynet:
+    driver: bridge
