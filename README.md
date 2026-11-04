@@ -25,7 +25,7 @@ Qdrant (Docker, :6335) + mem0 + rank_bm25 ── vector + keyword memory
 ## Quickstart
 
 ```bash
-cp ".env .sample" .env        # set OPENAI_API_KEY
+cp .env.sample .env           # set OPENAI_API_KEY
 docker compose up -d          # Qdrant on :6335
 
 # one-command dev run (starts everything):

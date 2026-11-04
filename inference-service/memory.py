@@ -16,10 +16,6 @@ SYSTEM_PROMPT: str = os.getenv(
     "You are a helpful assistant. Respond using Markdown formatting: include headings, bullet lists, and code fences for code blocks."
 )
 QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
-SYSTEM_PROMPT: str = os.getenv(
-    "OPENAI_SYSTEM_PROMPT",
-    "You are a helpful assistant. Respond using Markdown formatting: include headings, bullet lists, and code fences for code blocks."
-)
 
 class Chat(BaseModel):
     id: str
@@ -183,7 +179,6 @@ class Memory:
         created_at = datetime.now(timezone.utc).isoformat()
         chat = Chat(id=chat_id, title='', created_at=created_at)
         self.chats.append(chat)
-        print(f"================= {chat}")
         return chat
 
     def update_chat(self, chat_id: str, user_ask: str, ai_response: str) -> str:
@@ -192,7 +187,7 @@ class Memory:
         is_new = not entries
         # infer title on first message
         if is_new:
-            title = self._infer_title(user_ask + '/n' + ai_response)
+            title = self._infer_title(user_ask + '\n' + ai_response)
             # update in-memory chat title if present
             for chat in self.chats:
                 if chat.id == chat_id:

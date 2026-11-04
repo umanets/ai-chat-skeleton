@@ -1,3 +1,4 @@
+import logging
 import os
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,8 @@ from memory import Memory, Chat, Message, OPENAI_LLM_MODEL, SYSTEM_PROMPT
 from fastapi.responses import StreamingResponse
 import openai
 import orjson
+
+logger = logging.getLogger("inference")
 async_openai_client = openai.AsyncOpenAI()
 
 class SSEEvent(BaseModel):
@@ -70,7 +73,6 @@ async def get_chat_metadata(chat_id: str):
     chats = mem.get_chats()
     for chat in chats:
         if chat.id == chat_id:
-            print(f"CHAT FOUND: {chat}")
             return chat
     raise HTTPException(status_code=404, detail="Chat not found")
 
@@ -78,7 +80,6 @@ async def get_chat_metadata(chat_id: str):
 async def ask(chat_id: str, req: AskRequest, background_tasks: BackgroundTasks):
     """Handle user message, update memory, invoke LLM, and return AI response."""
     # build messages for LLM call
-    print(f"CHAT_ID: {chat_id}")
     history_msgs = mem.get_chat(chat_id)
 
     llm_msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -89,7 +90,7 @@ async def ask(chat_id: str, req: AskRequest, background_tasks: BackgroundTasks):
 
     # ask LLM for response
     try:
-        resp = openai.chat.completions.create(
+        resp = await async_openai_client.chat.completions.create(
             model=OPENAI_LLM_MODEL,
             messages=llm_msgs,
         )
@@ -125,43 +126,30 @@ async def ask_stream(chat_id: str, message: str, background_tasks: BackgroundTas
         chat_messages.append({"role": role, "content": msg.content})
     chat_messages.append({"role": "user", "content": message})
 
-    def event_generator():
+    async def event_generator():
         ai_text = ""
-        print("DEBUG: [Inference Generator] Started")
         try:
-            for chunk_index, chunk in enumerate(openai.chat.completions.create(
+            stream = await async_openai_client.chat.completions.create(
                 model=OPENAI_LLM_MODEL,
                 messages=chat_messages,
                 stream=True,
-            )):
+            )
+            async for chunk in stream:
                 delta = (
                     chunk.choices[0].delta.content
                     if chunk.choices and chunk.choices[0].delta else ""
                 )
                 if delta:
                     ai_text += delta
-                    event = SSEEvent(text=delta)
-                    yield event.serialize().encode("utf-8")
-            
+                    yield SSEEvent(text=delta).serialize().encode("utf-8")
+
             yield SSEEvent(done=True).serialize().encode("utf-8")
 
-            # Save AI message
-            try:
-                background_tasks.add_task(
-                    mem.update_chat, # The coroutine function to run in background
-                    chat_id,         # First argument to update_chat
-                    message,         # Second argument
-                    ai_text          # Third argument
-                )
-                # mem.update_chat(chat_id, message, ai_text)
-            except Exception as mem_err:
-                print(f"ERROR: [Inference Generator] Failed to update memory: {mem_err}")
-            
-        except Exception as outer_err:
-            print(f"ERROR: [Inference Generator] Outer exception: {outer_err}")
+            # Save the exchange to memory after the stream completes
+            background_tasks.add_task(mem.update_chat, chat_id, message, ai_text)
+        except Exception:
+            logger.exception("SSE generator failed")
             yield SSEEvent(error="Generator failure").serialize().encode("utf-8")
-        finally:
-            print("DEBUG: [Inference Generator] Finished")
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
